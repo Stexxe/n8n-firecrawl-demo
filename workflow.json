@@ -1,0 +1,177 @@
+{
+  "name": "Company Scraper — Google Sheets + Firecrawl",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "a1b2c3d4-0001-0001-0001-a1b2c3d40001",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0002-0002-0002-a1b2c3d40002",
+      "name": "Read Company URLs",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [460, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REPLACE_ME",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "a1b2c3d4-0003-0003-0003-a1b2c3d40003",
+      "name": "Loop Over URLs",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.firecrawl.dev/v1/scrape",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"url\": \"{{ $json.url }}\",\n  \"formats\": [\"extract\"],\n  \"extract\": {\n    \"schema\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"company_name\":   { \"type\": \"string\", \"description\": \"Official company name\" },\n        \"tagline\":        { \"type\": \"string\", \"description\": \"Company tagline or main value proposition\" },\n        \"description\":    { \"type\": \"string\", \"description\": \"2-3 sentence description of what the company does\" },\n        \"industry\":       { \"type\": \"string\", \"description\": \"Industry or business sector\" },\n        \"headquarters\":   { \"type\": \"string\", \"description\": \"City and country of headquarters\" },\n        \"key_products\":   { \"type\": \"array\", \"items\": { \"type\": \"string\" }, \"description\": \"List of main products or services\" }\n      },\n      \"required\": [\"company_name\", \"description\"]\n    }\n  }\n}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0004-0004-0004-a1b2c3d40004",
+      "name": "Firecrawl Extract",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 400],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_ME",
+          "name": "Firecrawl API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const extracted = $input.first().json.data?.extract ?? {};\nconst sourceUrl = $('Loop Over URLs').first().json.url ?? '';\n\nreturn [{\n  json: {\n    url:          sourceUrl,\n    company_name: extracted.company_name ?? '',\n    tagline:      extracted.tagline ?? '',\n    description:  extracted.description ?? '',\n    industry:     extracted.industry ?? '',\n    headquarters: extracted.headquarters ?? '',\n    key_products: Array.isArray(extracted.key_products)\n                    ? extracted.key_products.join(', ')\n                    : (extracted.key_products ?? ''),\n    scraped_at:   new Date().toISOString()\n  }\n}];"
+      },
+      "id": "a1b2c3d4-0005-0005-0005-a1b2c3d40005",
+      "name": "Format Row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 400]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Results",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "url":          "={{ $json.url }}",
+            "company_name": "={{ $json.company_name }}",
+            "tagline":      "={{ $json.tagline }}",
+            "description":  "={{ $json.description }}",
+            "industry":     "={{ $json.industry }}",
+            "headquarters": "={{ $json.headquarters }}",
+            "key_products": "={{ $json.key_products }}",
+            "scraped_at":   "={{ $json.scraped_at }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            { "id": "url",          "displayName": "url",          "canBeUsedToMatch": false, "defaultMatch": false, "display": true, "required": false, "type": "string" },
+            { "id": "company_name", "displayName": "company_name", "canBeUsedToMatch": false, "defaultMatch": false, "display": true, "required": false, "type": "string" },
+            { "id": "tagline",      "displayName": "tagline",      "canBeUsedToMatch": false, "defaultMatch": false, "display": true, "required": false, "type": "string" },
+            { "id": "description",  "displayName": "description",  "canBeUsedToMatch": false, "defaultMatch": false, "display": true, "required": false, "type": "string" },
+            { "id": "industry",     "displayName": "industry",     "canBeUsedToMatch": false, "defaultMatch": false, "display": true, "required": false, "type": "string" },
+            { "id": "headquarters", "displayName": "headquarters", "canBeUsedToMatch": false, "defaultMatch": false, "display": true, "required": false, "type": "string" },
+            { "id": "key_products", "displayName": "key_products", "canBeUsedToMatch": false, "defaultMatch": false, "display": true, "required": false, "type": "string" },
+            { "id": "scraped_at",   "displayName": "scraped_at",   "canBeUsedToMatch": false, "defaultMatch": false, "display": true, "required": false, "type": "string" }
+          ]
+        },
+        "options": {
+          "cellFormat": "USER_ENTERED"
+        }
+      },
+      "id": "a1b2c3d4-0006-0006-0006-a1b2c3d40006",
+      "name": "Write to Results Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [1340, 400],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REPLACE_ME",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [{ "node": "Read Company URLs", "type": "main", "index": 0 }]
+      ]
+    },
+    "Read Company URLs": {
+      "main": [
+        [{ "node": "Loop Over URLs", "type": "main", "index": 0 }]
+      ]
+    },
+    "Loop Over URLs": {
+      "main": [
+        [],
+        [{ "node": "Firecrawl Extract", "type": "main", "index": 0 }]
+      ]
+    },
+    "Firecrawl Extract": {
+      "main": [
+        [{ "node": "Format Row", "type": "main", "index": 0 }]
+      ]
+    },
+    "Format Row": {
+      "main": [
+        [{ "node": "Write to Results Sheet", "type": "main", "index": 0 }]
+      ]
+    },
+    "Write to Results Sheet": {
+      "main": [
+        [{ "node": "Loop Over URLs", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": []
+}
