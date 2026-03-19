@@ -4,6 +4,9 @@ Reads a list of company URLs from Google Sheets, uses [Firecrawl](https://firecr
 
 ---
 
+This is how it looks in the n8n UI:
+![n8n workflow](https://github.com/Stexxe/n8n-firecrawl-demo/blob/05eaebf3595c1d20f6bfc817e3ecc7462a07e5e5/n8n-screenshot.png)
+
 ## What gets extracted
 
 | Field | Description |
