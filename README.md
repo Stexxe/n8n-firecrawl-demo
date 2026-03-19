@@ -2,8 +2,6 @@
 
 Reads a list of company URLs from Google Sheets, uses [Firecrawl](https://firecrawl.dev)'s AI extraction to pull structured data from each page, and writes the results to a separate output sheet — fully automated with [n8n](https://n8n.io).
 
-![Workflow overview](assets/workflow.png)
-
 ---
 
 ## What gets extracted
